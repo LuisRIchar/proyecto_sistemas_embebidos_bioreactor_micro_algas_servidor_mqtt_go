@@ -16,7 +16,7 @@
 
 package main
 
-import "github.com/LuisRIchar/proyecto_sistemas_embebidos_bioreactor_micro_algas_servidor_mqtt_go.git/internal/modelo"
+import "github.com/LuisRIchar/proyecto_sistemas_embebidos_bioreactor_micro_algas_servidor_mqtt_go/internal/modelo"
 
 func main() {
 	modelo.Init_mqtt()
