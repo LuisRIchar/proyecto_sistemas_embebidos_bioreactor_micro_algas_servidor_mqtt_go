@@ -11,25 +11,13 @@
  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  # See the License for the specific language governing permissions and
  # limitations under the License.
+FROM alpine:latest
 
-services:
-  servidor-mqtt:
-    image: eclipse-mosquitto:latest
-    container_name: mqtt_serve
-    restart: always
-    ports:
-      - "1833:1833"
-    volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
-  
-  servidor-go:
-    build: ./go
-    depends_on:
-      - servidor_mqtt
-    container_name: go
-    volumes:
-      - ./go:/app
-    ports:
-      - "9090:9090"
-    stdin_open: true
-    tty: true
+RUN apk update && apk add --no-cache \
+    go
+
+WORKDIR /app
+
+COPY . .
+
+CMD ["sh"]

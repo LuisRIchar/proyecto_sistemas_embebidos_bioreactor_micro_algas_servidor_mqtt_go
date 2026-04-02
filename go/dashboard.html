@@ -1,0 +1,200 @@
+<!--
+/*
+ * Copyright 2026 Luis Ricardo Serrano Dzib
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+-->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Biorreactor Chlorella</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #f59e0b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-top: 4px solid var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card.temp { border-top-color: var(--accent-blue); }
+        .card.light { border-top-color: var(--accent-yellow); }
+        .card.turbidity { border-top-color: var(--accent-green); }
+
+        .card-title {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin: 0 0 1rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        .unit {
+            font-size: 1.2rem;
+            font-weight: normal;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-status {
+            margin-top: 3rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Biorreactor Microalgas</h1>
+        <p>Monitoreo en Tiempo Real</p>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card light">
+            <h2 class="card-title">Iluminación</h2>
+            <p class="card-value"><span id="val-lux">--</span> <span class="unit">Lux</span></p>
+        </div>
+
+        <div class="card temp">
+            <h2 class="card-title">Temperatura</h2>
+            <p class="card-value"><span id="val-temp">--</span> <span class="unit">°C</span></p>
+        </div>
+
+        <div class="card turbidity">
+            <h2 class="card-title">Turbidez (Biomasa)</h2>
+            <p class="card-value"><span id="val-ntu">--</span> <span class="unit">NTU</span></p>
+        </div>
+    </div>
+
+    <div class="connection-status">
+        <span class="status-dot"></span>
+        <span id="status-text">Esperando datos del servidor...</span>
+    </div>
+
+    <script>
+        async function fetchDatos() {
+            try {
+                // Llama al endpoint de tu servidor Go
+                const response = await fetch('/api/valores_crudos');
+                if (!response.ok) throw new Error('Error en la red');
+                
+                const data = await response.text();
+                
+                if (data && data.includes(',')) {
+                    // El ESP32 envía: luz,temperatura,turbidez
+                    const valores = data.split(',');
+                    
+                    if (valores.length === 3) {
+                        document.getElementById('val-lux').innerText = valores[0];
+                        document.getElementById('val-temp').innerText = valores[1];
+                        document.getElementById('val-ntu').innerText = valores[2];
+                        
+                        const now = new Date();
+                        document.getElementById('status-text').innerText = 
+                            `Última actualización: ${now.toLocaleTimeString()}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error obteniendo datos:', error);
+                document.getElementById('status-text').innerText = 'Error de conexión con el servidor Go.';
+            }
+        }
+
+        // Ejecutar inmediatamente y luego cada 5 segundos
+        fetchDatos();
+        setInterval(fetchDatos, 5000);
+    </script>
+
+</body>
+</html>
