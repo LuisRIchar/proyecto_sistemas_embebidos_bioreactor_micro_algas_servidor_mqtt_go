@@ -25,7 +25,7 @@ services:
   servidor-go:
     build: ./go
     depends_on:
-      - servidor_mqtt
+      - servidor-mqtt
     container_name: go
     volumes:
       - ./go:/app
