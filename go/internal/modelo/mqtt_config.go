@@ -1,33 +1,25 @@
-/*
- * Copyright 2026 Luis Ricardo Serrano Dzib
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package modelo
 
 import (
 	"fmt"
 	"net/http"
+	"sync"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-var ultimosDatos string
+var (
+	ultimosDatos string
+	datosMutex   sync.RWMutex
+)
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+	// Bloqueamos para escritura segura
+	datosMutex.Lock()
 	ultimosDatos = string(msg.Payload())
-	fmt.Printf("Valores recibidos: %s\n", ultimosDatos)
+	datosMutex.Unlock()
+
+	fmt.Printf("Valores recibidos: %s\n", string(msg.Payload()))
 }
 
 func Init_mqtt() {
@@ -49,7 +41,12 @@ func Init_mqtt() {
 	})
 
 	http.HandleFunc("/api/valores_crudos", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(ultimosDatos))
+		// Bloqueamos solo para lectura segura
+		datosMutex.RLock()
+		data := ultimosDatos
+		datosMutex.RUnlock()
+
+		w.Write([]byte(data))
 	})
 
 	fmt.Println("Web server running on http://192.168.100.100:9090")
