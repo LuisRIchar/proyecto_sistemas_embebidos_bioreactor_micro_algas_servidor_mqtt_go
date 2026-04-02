@@ -33,7 +33,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 func Init_mqtt() {
 
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tcp://mqtt-server:1833")
+	opts.AddBroker("tcp://servidor-mqtt:1833")
 	opts.SetClientID("Servidor_go")
 	opts.SetDefaultPublishHandler(messagePubHandler)
 
